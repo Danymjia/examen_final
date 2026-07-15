@@ -1,0 +1,17 @@
+# Imagen base de python
+FROM python:3.9-slim
+
+# Define el directorio de trabajo
+WORKDIR /app
+
+# Copia los archivos al contenedor
+COPY . /app
+
+# Instala dependencias
+RUN pip install --no-cache-dir flask mysql-connector-python
+
+# Puerto del contenedor
+EXPOSE 5004
+
+# Ejecutar el servidor
+CMD ["python", "app2.py"]

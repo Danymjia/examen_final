@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Metricas Redes - {{ server_name }}</title>
+</head>
+<body>
+    <h1>Server 2</h1>
+
+    <h2>Metricas</h2>
+    {% if metrics %}
+        <ul>
+            <li><strong>Video más visto:</strong> {{ metrics.video_mas_visto.video }} ({{ metrics.video_mas_visto.count }} vistas)</li>
+            <li><strong>Video con más likes:</strong> {{ metrics.video_mas_likes.video }} ({{ metrics.video_mas_likes.count }} likes)</li>
+            <li><strong>Video más comentado:</strong> {{ metrics.video_mas_comentado.video }} ({{ metrics.video_mas_comentado.count }} comentarios)</li>
+            <li><strong>Usuario más recurrente:</strong> {{ metrics.usuario_mas_recurrente.usuario }} ({{ metrics.usuario_mas_recurrente.count }} interacciones)</li>
+            <li><strong>Hora con más interacción:</strong> {{ metrics.hora_mas_interaccion.hora }}:00 ({{ metrics.hora_mas_interaccion.count }} interacciones)</li>
+            <li><strong>Video con mayor Ratio de Interacción:</strong> {{ metrics.video_max_ratio.video }} (Ratio: {{ metrics.video_max_ratio.ratio }})</li>
+        </ul>
+    {% endif %}
+
+    <h2>Datos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Acción</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Video</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in redes %}
+            <tr>
+                <td>{{ row.id }}</td>
+                <td>{{ row.usuario }}</td>
+                <td>{{ row.accion }}</td>
+                <td>{{ row.fecha_str }}</td>
+                <td>{{ row.hora_str }}</td>
+                <td>{{ row.short }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

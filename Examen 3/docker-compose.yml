@@ -1,0 +1,153 @@
+services:
+  mysql_principal:
+    container_name: ContenedorMaestro
+    image: mysql:8.0
+    ports:
+      - 5000:3306
+    command: --server-id=1 --log-bin=mysql-bin --binlog-do-db=examenad --auto-increment-increment=2 --auto-increment-offset=1 --gtid-mode=ON --enforce-gtid-consistency=ON
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: examenad
+    volumes:
+      - master_data:/var/lib/mysql
+      - ./script_ex_2B.txt:/docker-entrypoint-initdb.d/script_ex_2B.sql
+
+  phpmyadmin:
+    container_name: ContenedorPhpmyadmin
+    image: phpmyadmin:latest
+    ports:
+      - 5002:80
+    environment:
+      PMA_HOSTS: "mysql_principal"
+      PMA_ARBITRARY: 1
+
+  server1:
+    build:
+      context: ./server1
+      dockerfile: dockerfile
+    container_name: server1
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./server1:/app
+      - .:/app/shared
+    depends_on:
+      - mysql_principal
+
+  server2:
+    build:
+      context: ./server2
+      dockerfile: dockerfile
+    container_name: server2
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./server2:/app
+      - .:/app/shared
+    depends_on:
+      - mysql_principal
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: dockerfile
+    container_name: nginx
+    ports:
+      - 80:80
+    depends_on:
+      - server1
+      - server2
+
+  preparador:
+    build:
+      context: ./mapreduce
+      dockerfile: Dockerfile
+    container_name: mapreduce_preparador
+    volumes:
+      - .:/app
+    depends_on:
+      - nginx
+    command: python preparador.py
+
+  mapper1:
+    build:
+      context: ./mapreduce
+      dockerfile: Dockerfile
+    container_name: mapreduce_mapper1
+    volumes:
+      - .:/app
+    depends_on:
+      preparador:
+        condition: service_completed_successfully
+    command: python mapper.py splits/part_00.txt
+
+  mapper2:
+    build:
+      context: ./mapreduce
+      dockerfile: Dockerfile
+    container_name: mapreduce_mapper2
+    volumes:
+      - .:/app
+    depends_on:
+      preparador:
+        condition: service_completed_successfully
+    command: python mapper.py splits/part_01.txt
+
+  mapper3:
+    build:
+      context: ./mapreduce
+      dockerfile: Dockerfile
+    container_name: mapreduce_mapper3
+    volumes:
+      - .:/app
+    depends_on:
+      preparador:
+        condition: service_completed_successfully
+    command: python mapper.py splits/part_02.txt
+
+  mapper4:
+    build:
+      context: ./mapreduce
+      dockerfile: Dockerfile
+    container_name: mapreduce_mapper4
+    volumes:
+      - .:/app
+    depends_on:
+      preparador:
+        condition: service_completed_successfully
+    command: python mapper.py splits/part_03.txt
+
+  mapper5:
+    build:
+      context: ./mapreduce
+      dockerfile: Dockerfile
+    container_name: mapreduce_mapper5
+    volumes:
+      - .:/app
+    depends_on:
+      preparador:
+        condition: service_completed_successfully
+    command: python mapper.py splits/part_04.txt
+
+  reducer:
+    build:
+      context: ./mapreduce
+      dockerfile: Dockerfile
+    container_name: mapreduce_reducer
+    volumes:
+      - .:/app
+    depends_on:
+      mapper1:
+        condition: service_completed_successfully
+      mapper2:
+        condition: service_completed_successfully
+      mapper3:
+        condition: service_completed_successfully
+      mapper4:
+        condition: service_completed_successfully
+      mapper5:
+        condition: service_completed_successfully
+    command: python reducer.py
+
+volumes:
+  master_data:

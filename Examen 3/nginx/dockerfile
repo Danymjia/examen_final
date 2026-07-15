@@ -1,0 +1,8 @@
+#Imagen base de nginx
+FROM nginx:latest
+
+#Copiamos la configuracion de nginx
+COPY nginx.conf /etc/nginx/nginx.conf
+
+#Puerto donde trabaja nginx
+EXPOSE 80
