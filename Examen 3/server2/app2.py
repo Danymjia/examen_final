@@ -38,12 +38,14 @@ def index():
         db_status = f"Error: {e}"
 
     metrics = None
-    if os.path.exists("resultados.json"):
-        try:
-            with open("resultados.json", "r") as f:
-                metrics = json.load(f)
-        except Exception:
-            pass
+    for path in ["shared/resultados.json", "resultados.json"]:
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    metrics = json.load(f)
+                break
+            except Exception:
+                pass
 
     return render_template(
         "index.html",
