@@ -1,0 +1,26 @@
+{
+    "video_mas_visto": {
+        "video": "video12",
+        "count": 12
+    },
+    "video_mas_likes": {
+        "video": "video13",
+        "count": 12
+    },
+    "video_mas_comentado": {
+        "video": "video4",
+        "count": 12
+    },
+    "usuario_mas_recurrente": {
+        "usuario": "Jorge",
+        "count": 47
+    },
+    "hora_mas_interaccion": {
+        "hora": "13",
+        "count": 30
+    },
+    "video_max_ratio": {
+        "video": "video13",
+        "ratio": 7.75
+    }
+}

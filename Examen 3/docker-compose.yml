@@ -67,7 +67,7 @@ services:
       - .:/app
     depends_on:
       - nginx
-    command: python preparador.py
+    command: python mapreduce/preparador.py
 
   mapper1:
     build:
@@ -79,7 +79,7 @@ services:
     depends_on:
       preparador:
         condition: service_completed_successfully
-    command: python mapper.py splits/part_00.txt
+    command: python mapreduce/mapper.py splits/part_00.txt
 
   mapper2:
     build:
@@ -91,7 +91,7 @@ services:
     depends_on:
       preparador:
         condition: service_completed_successfully
-    command: python mapper.py splits/part_01.txt
+    command: python mapreduce/mapper.py splits/part_01.txt
 
   mapper3:
     build:
@@ -103,7 +103,7 @@ services:
     depends_on:
       preparador:
         condition: service_completed_successfully
-    command: python mapper.py splits/part_02.txt
+    command: python mapreduce/mapper.py splits/part_02.txt
 
   mapper4:
     build:
@@ -115,7 +115,7 @@ services:
     depends_on:
       preparador:
         condition: service_completed_successfully
-    command: python mapper.py splits/part_03.txt
+    command: python mapreduce/mapper.py splits/part_03.txt
 
   mapper5:
     build:
@@ -127,7 +127,7 @@ services:
     depends_on:
       preparador:
         condition: service_completed_successfully
-    command: python mapper.py splits/part_04.txt
+    command: python mapreduce/mapper.py splits/part_04.txt
 
   reducer:
     build:
@@ -147,7 +147,7 @@ services:
         condition: service_completed_successfully
       mapper5:
         condition: service_completed_successfully
-    command: python reducer.py
+    command: python mapreduce/reducer.py
 
 volumes:
   master_data:

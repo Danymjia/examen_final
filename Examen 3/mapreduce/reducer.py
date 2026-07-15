@@ -1,117 +1,59 @@
 import os
 import json
-from collections import Counter, defaultdict
 
-splits_dir = "/app/splits"
-final_counts = Counter()
-
-# Read all mapper output files
-for file in os.listdir(splits_dir):
+counts = {}
+for file in os.listdir("splits"):
     if file.endswith(".out"):
-        file_path = os.path.join(splits_dir, file)
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(f"splits/{file}", "r") as f:
             for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split('\t')
-                if len(parts) == 2:
-                    key, count = parts[0], int(parts[1])
-                    final_counts[key] += count
+                k, v = line.strip().split('\t')
+                counts[k] = counts.get(k, 0) + int(v)
 
-# Aggregate counts
-video_actions = defaultdict(lambda: Counter())
-user_counts = Counter()
-hour_counts = Counter()
+video_mas_visto = ["", 0]
+video_mas_likes = ["", 0]
+video_mas_comentado = ["", 0]
+user_mas_recurrente = ["", 0]
+hour_mas_interaccion = ["", 0]
+video_stats = {}
 
-for key, count in final_counts.items():
-    if key.startswith("video:"):
-        _, name, action = key.split(':')
-        video_actions[name][action] += count
-    elif key.startswith("user:"):
-        _, name = key.split(':')
-        user_counts[name] += count
-    elif key.startswith("hour:"):
-        _, hour = key.split(':')
-        hour_counts[hour] += count
-
-# Calculate metrics
-video_mas_visto = {"video": "N/A", "count": 0}
-video_mas_likes = {"video": "N/A", "count": 0}
-video_mas_comentado = {"video": "N/A", "count": 0}
-video_max_ratio = {"video": "N/A", "ratio": 0.0, "views": 0, "interactions": 0}
-
-for video, actions in video_actions.items():
-    views = actions.get("view", 0)
-    likes = actions.get("like", 0)
-    comments = actions.get("comment", 0)
-    shares = actions.get("shared", 0)
-    
-    if views > video_mas_visto["count"]:
-        video_mas_visto = {"video": video, "count": views}
+for k, v in counts.items():
+    parts = k.split(':')
+    if parts[0] == "video":
+        video, action = parts[1], parts[2]
+        if action == "view" and v > video_mas_visto[1]:
+            video_mas_visto = [video, v]
+        if action == "like" and v > video_mas_likes[1]:
+            video_mas_likes = [video, v]
+        if action == "comment" and v > video_mas_comentado[1]:
+            video_mas_comentado = [video, v]
+            
+        if video not in video_stats:
+            video_stats[video] = {"view": 0, "like": 0, "comment": 0, "shared": 0}
+        video_stats[video][action] = v
         
-    if likes > video_mas_likes["count"]:
-        video_mas_likes = {"video": video, "count": likes}
-        
-    if comments > video_mas_comentado["count"]:
-        video_mas_comentado = {"video": video, "count": comments}
-        
+    elif parts[0] == "user" and v > user_mas_recurrente[1]:
+        user_mas_recurrente = [parts[1], v]
+    elif parts[0] == "hour" and v > hour_mas_interaccion[1]:
+        hour_mas_interaccion = [parts[1], v]
+
+video_max_ratio = ["", 0.0]
+for video, stats in video_stats.items():
+    views = stats["view"]
     if views > 0:
-        ratio = (likes + comments + shares) / views
-        if ratio > video_max_ratio["ratio"]:
-            video_max_ratio = {
-                "video": video,
-                "ratio": ratio,
-                "views": views,
-                "interactions": likes + comments + shares
-            }
-
-usuario_mas_recurrente = {"usuario": "N/A", "count": 0}
-if user_counts:
-    user, count = user_counts.most_common(1)[0]
-    usuario_mas_recurrente = {"usuario": user, "count": count}
-
-hora_mas_interaccion = {"hora": "N/A", "count": 0}
-if hour_counts:
-    hour, count = hour_counts.most_common(1)[0]
-    hora_mas_interaccion = {"hora": hour, "count": count}
+        ratio = (stats["like"] + stats["comment"] + stats["shared"]) / views
+        if ratio > video_max_ratio[1]:
+            video_max_ratio = [video, ratio]
 
 results = {
-    "video_mas_visto": video_mas_visto,
-    "video_mas_likes": video_mas_likes,
-    "video_mas_comentado": video_mas_comentado,
-    "usuario_mas_recurrente": usuario_mas_recurrente,
-    "hora_mas_interaccion": hora_mas_interaccion,
-    "video_max_ratio": video_max_ratio
+    "video_mas_visto": {"video": video_mas_visto[0], "count": video_mas_visto[1]},
+    "video_mas_likes": {"video": video_mas_likes[0], "count": video_mas_likes[1]},
+    "video_mas_comentado": {"video": video_mas_comentado[0], "count": video_mas_comentado[1]},
+    "usuario_mas_recurrente": {"usuario": user_mas_recurrente[0], "count": user_mas_recurrente[1]},
+    "hora_mas_interaccion": {"hora": hour_mas_interaccion[0], "count": hour_mas_interaccion[1]},
+    "video_max_ratio": {"video": video_max_ratio[0], "ratio": video_max_ratio[1]}
 }
 
-# Print results to stdout
-print("\n" + "="*40, flush=True)
-print("   RESULTADOS DEL PROCESAMIENTO MAPREDUCE", flush=True)
-print("="*40, flush=True)
-print(f"Video más visto: {video_mas_visto['video']} ({video_mas_visto['count']} views)", flush=True)
-print(f"Video con más likes: {video_mas_likes['video']} ({video_mas_likes['count']} likes)", flush=True)
-print(f"Video más comentado: {video_mas_comentado['video']} ({video_mas_comentado['count']} comments)", flush=True)
-print(f"Usuario más recurrente: {usuario_mas_recurrente['usuario']} ({usuario_mas_recurrente['count']} interactions)", flush=True)
-print(f"Hora con más interacción: {hora_mas_interaccion['hora']}:00 ({hora_mas_interaccion['count']} interactions)", flush=True)
-print(f"Video con mayor Ratio de Interacción: {video_max_ratio['video']} (Ratio: {video_max_ratio['ratio']:.4f})", flush=True)
-print("="*40 + "\n", flush=True)
+with open("resultados.json", "w") as f:
+    json.dump(results, f, indent=4)
 
-# Save to shared JSON file
-results_path = "/app/resultados.json"
-with open(results_path, 'w', encoding='utf-8') as rf:
-    json.dump(results, rf, indent=4)
-
-# Save to shared TXT file
-with open("/app/resultados.txt", 'w', encoding='utf-8') as tf:
-    tf.write("RESULTADOS DEL PROCESAMIENTO MAPREDUCE\n")
-    tf.write("="*40 + "\n")
-    tf.write(f"Video más visto: {video_mas_visto['video']} ({video_mas_visto['count']} views)\n")
-    tf.write(f"Video con más likes: {video_mas_likes['video']} ({video_mas_likes['count']} likes)\n")
-    tf.write(f"Video más comentado: {video_mas_comentado['video']} ({video_mas_comentado['count']} comments)\n")
-    tf.write(f"Usuario más recurrente: {usuario_mas_recurrente['usuario']} ({usuario_mas_recurrente['count']} interactions)\n")
-    tf.write(f"Hora con más interacción: {hora_mas_interaccion['hora']}:00 ({hora_mas_interaccion['count']} interactions)\n")
-    tf.write(f"Video con mayor Ratio de Interacción: {video_max_ratio['video']} (Ratio: {video_max_ratio['ratio']:.4f})\n")
-    tf.write("="*40 + "\n")
-
-print("Reducer finished and saved metrics to /app/resultados.json and /app/resultados.txt", flush=True)
+print("Resultados guardados en resultados.json")
